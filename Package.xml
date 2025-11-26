@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    
+    <!-- Apex Classes -->
+    <types>
+        <members>OpportunityStatusController</members>
+        <members>OpportunityStatusControllerTest</members>
+        <name>ApexClass</name>
+    </types>
+
+    <!-- LWC Bundle -->
+    <types>
+        <members>opportunityStatusCheck</members>
+        <name>LightningComponentBundle</name>
+    </types>
+
+    <!-- Custom Setting Definition -->
+    <types>
+        <members>ThirdPartyConfig__c</members>
+        <name>CustomObject</name>
+    </types>
+
+    <!-- Custom Setting Fields -->
+    <types>
+        <members>ThirdPartyConfig__c.Production_URL__c</members>
+        <members>ThirdPartyConfig__c.Sandbox_URL__c</members>
+        <members>ThirdPartyConfig__c.Max_Wait_Seconds__c</members>
+        <name>CustomField</name>
+    </types>
+
+    <!-- Opportunity Custom Field -->
+    <types>
+        <members>Opportunity.Secret_Key__c</members>
+        <name>CustomField</name>
+    </types>
+
+    <!-- Static Resource (if video uploaded as My_90_Second_Video) -->
+    <types>
+        <members>My_90_Second_Video</members>
+        <name>StaticResource</name>
+    </types>
+
+    <!-- Required -->
+    <version>61.0</version>
+
+</Package>

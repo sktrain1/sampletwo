@@ -1,0 +1,51 @@
+<template>
+    <lightning-card>
+        
+        <!-- INITIAL MESSAGE + VIDEO / LOW BW TEXT -->
+        <template if:false={finalState}>
+            <p class="slds-p-around_medium">{message}</p>
+
+            <!-- Show Video -->
+            <template if:true={showVideo}>
+                <video width="400" autoplay muted>
+                    <source src="/resource/My_90_Second_Video" type="video/mp4">
+                </video>
+            </template>
+
+            <!-- Low Bandwidth Message -->
+            <template if:true={isLowBandwidth}>
+                <p class="slds-text-color_weak">We are checking...</p>
+            </template>
+
+            <!-- Progress Bar -->
+            <lightning-progress-bar value={progress} label="Processing"></lightning-progress-bar>
+
+            <p class="slds-p-top_small">
+                Time: {timer}s / {maxSeconds}s
+            </p>
+        </template>
+
+        <!-- APPROVED -->
+        <template if:true={finalState === 'approved'}>
+            <p class="slds-text-color_success">{message}</p>
+            <p>You will be redirected shortly...</p>
+            <a href={redirectUrl} target="_blank">Click here if not redirected</a>
+        </template>
+
+        <!-- DECLINED -->
+        <template if:true={finalState === 'declined'}>
+            <p class="slds-text-color_error">{message}</p>
+        </template>
+
+        <!-- TIMEOUT -->
+        <template if:true={finalState === 'timeout'}>
+            <p>{message}</p>
+        </template>
+
+        <!-- ERROR -->
+        <template if:true={finalState === 'error'}>
+            <p class="slds-text-color_error">{message}</p>
+        </template>
+
+    </lightning-card>
+</template>

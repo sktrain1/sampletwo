@@ -1,0 +1,206 @@
+1. Define Requirements & Configuration Structure
+
+Before writing code:
+
+✔ Identify all configurable values:
+
+Production URL
+
+Sandbox URL
+
+Max wait seconds
+
+Opportunity secret key field
+
+✔ Decide naming conventions
+
+Custom Setting: ThirdPartyConfig__c
+
+LWC: opportunityStatusCheck
+
+Apex class: OpportunityStatusController
+
+This prevents rework later.
+
+2. Create Custom Setting (Hierarchy Setting)
+
+Why first?
+Because both Apex and LWC depend on it.
+
+Steps:
+
+Create Custom Setting: ThirdPartyConfig__c
+
+Add fields:
+
+Production_URL__c (Text)
+
+Sandbox_URL__c (Text)
+
+Max_Wait_Seconds__c (Number)
+
+Populate values in Setup → Custom Settings for:
+
+Default Organization Level (or user-specific, if needed)
+
+You want this ready before Apex logic is written.
+
+3. Create Opportunity Custom Field
+
+Create:
+
+✔ Secret_Key__c (Text field)
+
+Your redirect string needs this, so Apex depends on it.
+
+4. Create Apex Controller
+
+Now create:
+
+✔ OpportunityStatusController.cls
+
+Tasks:
+
+Fetch Opportunity stage
+
+Fetch ThirdPartyConfig data
+
+Determine sandbox vs production
+
+Return secret key
+
+Return max seconds
+
+Return base URL
+
+Why now?
+Because LWC depends on the Apex controller to function.
+
+5. Build Test Class
+✔ OpportunityStatusControllerTest.cls
+
+Create:
+
+Setup test data for multiple opportunity scenarios (Approved, Declined, Pending)
+
+Insert test custom settings
+
+Test both methods independently
+
+Why now?
+Ensures Apex class design is stable before UI work begins.
+
+6. Build the LWC Skeleton
+
+Create an empty LWC:
+
+opportunityStatusCheck.html
+
+opportunityStatusCheck.js
+
+opportunityStatusCheck.js-meta.xml
+
+Start with basic structure:
+
+A simple <lightning-card>
+
+Input parameter: @api opportunityId
+
+No logic yet—just make the component visible in Flow.
+
+7. Implement LWC Front-End Logic in Layers
+LAYER 1 — Initialization
+
+On connectedCallback() → call Apex getConfigData()
+
+Store maxSeconds, baseUrl, secret_key
+
+LAYER 2 — Timer + Progress Bar
+
+Implement timer increasing every 1 second
+
+Bind progress bar to percentage
+
+LAYER 3 — Network Bandwidth Check
+
+Use navigator.connection.downlink
+
+Show video or fallback message
+
+LAYER 4 — Polling
+
+Every 5 seconds:
+
+Call getOpportunityStage()
+
+Branch logic: approved → declined → timeout
+
+LAYER 5 — Redirect Logic
+
+When approved:
+
+Display success message
+
+After 5 seconds → redirect to:
+
+baseUrl + '?secret_key=' + secretKey
+
+LAYER 6 — Error Handling
+
+Surround Apex calls with try/catch
+
+Show an error panel
+
+8. Add Static Resource (Video)
+
+Upload 90-second MP4:
+
+Name: My_90_Second_Video
+
+Reference in LWC:
+
+<video autoplay muted>
+   <source src="/resource/My_90_Second_Video">
+</video>
+
+9. Build Final UI Polish
+
+Optional but recommended:
+
+✔ Add spinner when loading
+✔ Center video
+✔ Style messages
+✔ Add manual navigation link
+✔ Screen reader support
+
+10. Bind LWC to Flow
+
+In Flow Builder:
+
+Add LWC to screen
+
+Pass OpportunityId to LWC
+
+Save screen
+
+11. Validate End-to-End in Sandbox
+
+Test scenarios:
+
+Scenario	Expected
+Stage → Approved in < maxSeconds	Timer stops → show success → auto redirect
+Stage → Declined	Show decline message
+Stage → Never approved	Timeout message
+Slow network	Show “We are checking…”
+Normal network	Video plays
+Custom setting missing	Error handling
+No secret key	Redirect without key
+12. Prepare Deployment Package
+
+Now that everything is stable:
+
+Bundle all metadata into folder
+
+Create package.xml
+
+Deploy to target org
