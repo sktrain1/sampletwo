@@ -1,103 +1,81 @@
-/******** Center card + 60% width ********/
-.outer-wrapper {
+/* Wrapping container */
+.wrapper {
+    width: 50%;
+    margin: 60px auto;
     display: flex;
     justify-content: center;
-    padding: 25px 0;
+    animation: fadeIn 0.8s ease;
 }
 
-/* Lightning Card Override to set width */
-.main-card {
-    width: 60% !important;
-}
-
-/******** INTERNAL CONTAINER ********/
-.card-container {
-    padding: 20px 26px;
+/* Card UI */
+.card {
+    width: 100%;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     text-align: center;
-    animation: fadeIn 0.6s ease-out;
 }
 
-/******** SUBTITLE ********/
+/* Titles */
+.title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 15px;
+    color: #333;
+}
+
 .subtitle {
-    font-size: 1.15rem;
-    color: #5c5c5c;
-    margin-top: 10px;
-    margin-bottom: 18px;
-    min-height: 45px;
+    color: #777;
+    margin-bottom: 20px;
 }
 
-/******** VIDEO / MEDIA ********/
-.media-container {
-    margin: 18px 0;
-}
-
-.review-video {
+/* Video box */
+.videoBox {
     width: 100%;
     border-radius: 12px;
-    box-shadow: 0px 6px 20px rgba(0,0,0,0.18);
-}
-
-/******** LOW BANDWIDTH ********/
-.low-bandwidth {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f5f6f9;
-    padding: 20px;
-    border-radius: 12px;
-    font-size: 1.2rem;
-    font-weight: 500;
-    color: #333;
-    box-shadow: inset 0 0 8px rgba(0,0,0,0.08);
-    border: 1px solid #e0e0e0;
-}
-
-.pulse-dot {
-    width: 14px;
-    height: 14px;
-    background-color: #4caf50;
-    border-radius: 50%;
-    margin-right: 10px;
-    animation: pulsing 1.4s infinite ease-in-out;
-}
-
-/******** PULSE ANIM ********/
-@keyframes pulsing {
-    0% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.5); opacity: 1; }
-    100% { transform: scale(1); opacity: 0.7; }
-}
-
-/******** PROGRESS BAR ********/
-.progress-wrapper {
     margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-.progress-bar {
-    background-color: #e6e6e6;
-    border-radius: 10px;
-    height: 12px;
-    overflow: hidden;
+/* Loader Animation */
+.loader {
+    border: 6px solid #eee;
+    border-top: 6px solid #0070d2;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 20px;
+    animation: spin 1s linear infinite;
 }
 
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4caf50, #7adf7a);
-    width: 0%;
-    border-radius: 10px;
-    transition: width 0.5s linear;
-    box-shadow: inset 0 0 4px rgba(255,255,255,0.8);
+/* Decision Icons */
+.statusIcon {
+    font-size: 60px;
+    margin-bottom: 15px;
 }
 
-.progress-text {
-    margin-top: 8px;
-    font-size: 0.95rem;
-    color: #444;
-    font-weight: 500;
+/* Colors */
+.approved { color: #2ecc71; }
+.declined { color: #e74c3c; }
+.pending  { color: #f1c40f; }
+
+.approvedTxt { color: #2ecc71; }
+.declinedTxt { color: #e74c3c; }
+.pendingTxt  { color: #f1c40f; }
+
+/* Fade-in Animation */
+.fade-in {
+    animation: fadeIn 0.8s ease;
 }
 
-/******** FADE ANIMATION ********/
+/* Keyframes */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
