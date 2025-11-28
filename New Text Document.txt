@@ -1,43 +1,48 @@
 <template>
-    <div class="outer-wrapper">
+    <div class="wrapper">
+        <div class="card">
 
-        <lightning-card title="Credit Card Application Review" class="main-card">
+            <!-- REVIEWING SECTION -->
+            <template if:true={isReviewing}>
+                <div class="section fade-in">
+                    <div class="loader"></div>
 
-            <!-- CARD BODY -->
-            <div class="card-container">
+                    <h2 class="title">We are reviewing your credit card application</h2>
+                    <p class="subtitle">Please wait while we verify your details...</p>
 
-                <!-- MAIN MESSAGE -->
-                <p class="subtitle">{message}</p>
+                    <!-- Video -->
+                    <video class="videoBox" autoplay muted playsinline>
+                        <source src={videoUrl} type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </template>
 
-                <!-- VIDEO OR LOW BANDWIDTH UI -->
-                <div class="media-container">
-                    <template if:true={showVideo}>
-                        <video class="review-video" autoplay muted playsinline>
-                            <source src="/resource/CreditAppReviewVideo" type="video/mp4" />
-                        </video>
+            <!-- FINAL DECISION -->
+            <template if:true={isDecisionReady}>
+                <div class="section fade-in">
+
+                    <template if:true={isApproved}>
+                        <div class="statusIcon approved">✔</div>
+                        <h2 class="approvedTxt">Approved!</h2>
+                        <p>Your credit card application has been successfully approved.</p>
                     </template>
 
-                    <template if:false={showVideo}>
-                        <div class="low-bandwidth">
-                            <div class="pulse-dot"></div>
-                            <span>We’re checking your application…</span>
-                        </div>
+                    <template if:true={isDeclined}>
+                        <div class="statusIcon declined">✖</div>
+                        <h2 class="declinedTxt">Declined</h2>
+                        <p>We’re sorry. Based on our review, we cannot approve your request.</p>
                     </template>
+
+                    <template if:true={isMoreTime}>
+                        <div class="statusIcon pending">⏳</div>
+                        <h2 class="pendingTxt">We Need More Time</h2>
+                        <p>Your application requires additional verification. Please check back soon.</p>
+                    </template>
+
                 </div>
+            </template>
 
-                <!-- PROGRESS BAR -->
-                <div class="progress-wrapper">
-                    <div class="progress-bar">
-                        <div class="progress-fill" style={progressStyle}></div>
-                    </div>
-                    <div class="progress-text">
-                        {progress}% completed
-                    </div>
-                </div>
-
-            </div>
-
-        </lightning-card>
-
+        </div>
     </div>
 </template>
