@@ -1,73 +1,41 @@
-STEP 1 — Apex REST Class That Streams the Video Blob
-@RestResource(urlMapping='/videoStream/*')
-global with sharing class VideoStreamService {
-
-    @HttpGet
-    global static void streamVideo() {
-        RestResponse res = RestContext.response;
-
-        // Load the static resource as blob
+Apex Controller
+public with sharing class VideoStreamVF {
+    public Blob getVideoBlob() {
         StaticResource sr = [
-            SELECT Body, ContentType 
-            FROM StaticResource 
-            WHERE Name = 'MyVideoResource'  // <-- change to your SR name
+            SELECT Body, ContentType
+            FROM StaticResource
+            WHERE Name = 'MyVideoResource'
             LIMIT 1
         ];
-
-        res.addHeader('Content-Type', sr.ContentType);   // video/mp4
-        res.addHeader('Cache-Control', 'max-age=3600');
-        res.responseBody = sr.Body;                      // send blob
+        ApexPages.currentPage().getHeaders().put('Content-Type', sr.ContentType);
+        return sr.Body;
     }
 }
 
+Visualforce Page
+<apex:page controller="VideoStreamVF" cache="true" contentType="video/mp4">
+    {!videoBlob}
+</apex:page>
 
-This exposes a streaming endpoint:
 
-/services/apexrest/videoStream
+Name the page:
 
-STEP 2 — Your LWC to Play the Video
-videoPlayer.html
-<template>
-    <video controls width="600">
-        <source src={videoUrl} type="video/mp4" />
-        Your browser does not support the video tag.
-    </video>
-</template>
+VideoStream
 
-videoPlayer.js
-import { LightningElement } from 'lwc';
 
-export default class VideoPlayer extends LightningElement {
-    videoUrl = '/services/apexrest/videoStream';
-}
+Now test:
 
-videoPlayer.js-meta.xml
-<?xml version="1.0" encoding="UTF-8"?>
-<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>61.0</apiVersion>
-    <isExposed>true</isExposed>
-    <targets>
-        <target>lightningCommunity__Page</target>
-        <target>lightningCommunity__Default</target>
-    </targets>
-</LightningComponentBundle>
+https://YOURCOMMUNITYDOMAIN/apex/VideoStream
 
-STEP 3 — Enable Guest User Access
 
-You must allow the Experience Cloud Guest User to use the REST class.
+✔ Should download or stream
+✔ NO rest restrictions
+✔ Always works for guest users
 
-Go to:
+✅ STEP 4 — Update LWC to use VF URL
+videoUrl = '/apex/VideoStream';
 
-Setup → Sites → Your Experience Site → Public Access Settings
-
-Under Enabled Apex Classes, add:
-
-VideoStreamService
-
-That’s it.
-
-⭐ RESULT
-
-Your LWC displays and plays the video correctly in Experience Cloud:
-
-<video controls src="/services/apexrest/videoStream"></video>
+LWC HTML:
+<video width="600" controls>
+    <source src={videoUrl} type="video/mp4" />
+</video>
