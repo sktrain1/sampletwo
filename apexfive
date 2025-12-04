@@ -1,0 +1,4 @@
+ <video width="600" height="400" controls>
+        <source src="{!URLFOR($Resource.MyVideoResource)}" type="video/mp4" />
+        Your browser does not support the video tag.
+    </video>
