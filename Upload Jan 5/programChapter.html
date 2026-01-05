@@ -1,0 +1,100 @@
+<template>
+    <div class="slds-m-bottom_medium slds-align_absolute-center">
+        <span class="slds-text-heading_small">
+            Upload the required CSV files and click <b>Start Loading</b>.
+            Use <b>Refresh</b> to reset the upload state or
+            <b>Erase Existing Records</b> to delete existing records.
+        </span>
+    </div>
+
+    <!-- Spinner -->
+    <template if:true={isLoading}>
+        <div class="slds-m-around_medium slds-align_absolute-center">
+            <lightning-spinner size="medium"></lightning-spinner>
+            <p class="slds-m-top_small">{status}</p>
+        </div>
+    </template>
+
+<!-- Results -->
+<template if:true={jobId}>
+        <article class="slds-card slds-m-top_large">
+            <div class="slds-card__body slds-card__body_inner">
+
+                <div class="slds-text-align_right">
+                    <p><b>Job ID:</b> {jobId}</p>
+                    <p><b>Status:</b> {status}</p>
+                </div>
+
+                <div class="slds-m-top_small slds-grid slds-wrap">
+                    <template if:true={programsErrorUrl}>
+                        <lightning-button label="Download Programs Errors"
+                            onclick={downloadProgramsErrors}>
+                        </lightning-button>
+                    </template>
+
+<template if:true={chaptersErrorUrl}>
+                        <lightning-button label="Download Chapters Errors"
+                            onclick={downloadChaptersErrors}>
+                        </lightning-button>
+                    </template>
+
+<template if:true={programChaptersErrorUrl}>
+                        <lightning-button label="Download Program Chapters Errors"
+                            onclick={downloadProgramChaptersErrors}>
+                        </lightning-button>
+                    </template>
+
+<template if:true={templatesErrorUrl}>
+                        <lightning-button label="Download Product Templates Errors"
+                            onclick={downloadTemplatesErrors}>
+                        </lightning-button>
+                    </template>
+</div>
+</div>
+</article>
+</template>
+
+<!-- FILE UPLOADS -->
+<div class="slds-m-top_large">
+
+    <!-- Programs -->
+    <lightning-file-upload label="Programs CSV" accept=".csv" record-id={uploadParentId} onuploadfinished={handleProgramsUpload}>
+    </lightning-file-upload>
+    <template if:true={uploadedFiles.programs}>
+            <p>Total: {totalPrograms} | Inserted: {insertedPrograms}</p>
+        </template>
+
+    <!-- Chapters -->
+    <lightning-file-upload label="Chapters CSV" accept=".csv" record-id={uploadParentId} onuploadfinished={handleChaptersUpload}>
+    </lightning-file-upload>
+    <template if:true={uploadedFiles.chapters}>
+            <p>Total: {totalChapters} | Inserted: {insertedChapters}</p>
+        </template>
+
+    <!-- Program Chapters -->
+    <lightning-file-upload label="Program Chapters CSV" accept=".csv" record-id={uploadParentId} onuploadfinished={handleProgramChaptersUpload}>
+    </lightning-file-upload>
+    <template if:true={uploadedFiles.programChapters}>
+            <p>Total: {totalProgramChapters} | Inserted: {insertedProgramChapters}</p>
+        </template>
+
+    <!-- Product Templates -->
+    <lightning-file-upload label="Product Templates CSV" accept=".csv" record-id={uploadParentId} onuploadfinished={handleProductTemplatesUpload}>
+    </lightning-file-upload>
+    <template if:true={uploadedFiles.productTemplates}>
+            <p>Total: {totalProductTemplates} | Inserted: {insertedProductTemplates}</p>
+        </template>
+</div>
+
+<!-- ACTIONS -->
+<div class="slds-m-top_large slds-grid slds-grid_align-end">
+    <lightning-button variant="brand" label="Start Loading" onclick={startMigration} disabled={disableStart}>
+    </lightning-button>
+
+    <lightning-button class="slds-m-left_small" label="Refresh" onclick={handleRefresh}>
+    </lightning-button>
+
+    <lightning-button class="slds-m-left_small" variant="destructive" label="Erase Existing Records" onclick={handleCleanData}>
+    </lightning-button>
+</div>
+</template>
