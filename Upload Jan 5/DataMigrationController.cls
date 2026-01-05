@@ -1,5 +1,9 @@
 public with sharing class DataMigrationController {
 
+    /* ============================================================
+       PUBLIC METHODS
+       ============================================================ */
+
     @AuraEnabled
     public static Id startMigration(
         Id programsFileId,
@@ -12,10 +16,17 @@ public with sharing class DataMigrationController {
         );
         insert job;
 
-        List<Map<String,String>> programs = parseCsv(programsFileId);
-        List<Map<String,String>> chapters = parseCsv(chaptersFileId);
-        List<Map<String,String>> programChapters = parseCsv(programChaptersFileId);
-        List<Map<String,String>> productTemplates = parseCsv(productTemplatesFileId);
+        List<Map<String,String>> programs =
+            parseCsv(programsFileId);
+
+        List<Map<String,String>> chapters =
+            parseCsv(chaptersFileId);
+
+        List<Map<String,String>> programChapters =
+            parseCsv(programChaptersFileId);
+
+        List<Map<String,String>> productTemplates =
+            parseCsv(productTemplatesFileId);
 
         DataMigrationBatch batch = new DataMigrationBatch(
             programs,
@@ -47,6 +58,15 @@ public with sharing class DataMigrationController {
         ];
     }
 
+    @AuraEnabled
+    public static void cleanAllData() {
+        DataCleanupUtility.cleanAllData();
+    }
+
+    /* ============================================================
+       CSV PARSING (NO REGEX)
+       ============================================================ */
+
     private static List<Map<String,String>> parseCsv(Id contentVersionId) {
         ContentVersion cv = [
             SELECT VersionData
@@ -54,86 +74,91 @@ public with sharing class DataMigrationController {
             WHERE Id = :contentVersionId
         ];
 
-        List<String> rows = cv.VersionData.toString().split('\n');
-        //List<String> headers = rows[0].split(',');
+        // Decode as UTF-8
+        String csv;
+        try {
+            csv = cv.VersionData.toString();
+        } catch (Exception e) {
+            throw new AuraHandledException(
+                'Invalid file encoding. Please upload a CSV saved as UTF-8.'
+            );
+        }
 
-        List<String> headers = rows[0].replace('\uFEFF','').split(',');
+        // Split lines WITHOUT regex
+        List<String> rows = splitLines(csv);
+        if (rows.isEmpty()) return new List<Map<String,String>>();
+
+        // Parse headers (remove BOM)
+        List<String> headers = parseCsvLine(
+            rows[0].replace('\uFEFF','')
+        );
 
         List<Map<String,String>> data = new List<Map<String,String>>();
 
         for (Integer i = 1; i < rows.size(); i++) {
             if (String.isBlank(rows[i])) continue;
 
-            List<String> cols = rows[i].split(',');
+            List<String> cols = parseCsvLine(rows[i]);
             Map<String,String> rowMap = new Map<String,String>();
 
             for (Integer j = 0; j < headers.size(); j++) {
-                rowMap.put(headers[j].trim(),
-                    j < cols.size() ? cols[j].trim() : null);
+                rowMap.put(
+                    headers[j].trim(),
+                    j < cols.size() ? cols[j].trim() : null
+                );
             }
             data.add(rowMap);
         }
         return data;
     }
 
-    private static List<Map<String,String>> parseCsv(Id contentVersionId) {
-    ContentVersion cv = [
-        SELECT VersionData
-        FROM ContentVersion
-        WHERE Id = :contentVersionId
-    ];
+    /* ============================================================
+       LINE SPLITTER (NO split(), NO REGEX)
+       ============================================================ */
 
-    String csv = cv.VersionData.toString();
-    csv = csv.replace('\r\n', '\n').replace('\r', '\n');
+    private static List<String> splitLines(String text) {
+        List<String> lines = new List<String>();
+        String current = '';
 
-    List<String> rows = csv.split('\n');
+        for (Integer i = 0; i < text.length(); i++) {
+            String c = text.substring(i, i + 1);
 
-    List<String> headers = parseCsvLine(
-        rows[0].replace('\uFEFF','')
-    );
-
-    List<Map<String,String>> data = new List<Map<String,String>>();
-
-    for (Integer i = 1; i < rows.size(); i++) {
-        if (String.isBlank(rows[i])) continue;
-
-        List<String> cols = parseCsvLine(rows[i]);
-        Map<String,String> rowMap = new Map<String,String>();
-
-        for (Integer j = 0; j < headers.size(); j++) {
-            rowMap.put(
-                headers[j].trim(),
-                j < cols.size() ? cols[j].trim() : null
-            );
+            if (c == '\n') {
+                lines.add(current);
+                current = '';
+            } else if (c != '\r') {
+                current += c;
+            }
         }
-        data.add(rowMap);
-    }
-    return data;
-}
 
-private static List<String> parseCsvLine(String line) {
-    List<String> result = new List<String>();
-    Boolean inQuotes = false;
-    String current = '';
-
-    for (Integer i = 0; i < line.length(); i++) {
-        String c = line.substring(i, i+1);
-
-        if (c == '"') {
-            inQuotes = !inQuotes;
-        } else if (c == ',' && !inQuotes) {
-            result.add(current);
-            current = '';
-        } else {
-            current += c;
+        if (current != '') {
+            lines.add(current);
         }
+        return lines;
     }
-    result.add(current);
-    return result;
-}
 
-    @AuraEnabled
-    public static void cleanAllData() {
-        DataCleanupUtility.cleanAllData();
+    /* ============================================================
+       CSV LINE PARSER (QUOTES + COMMAS SAFE)
+       ============================================================ */
+
+    private static List<String> parseCsvLine(String line) {
+        List<String> result = new List<String>();
+        Boolean inQuotes = false;
+        String current = '';
+
+        for (Integer i = 0; i < line.length(); i++) {
+            String c = line.substring(i, i + 1);
+
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ',' && !inQuotes) {
+                result.add(current);
+                current = '';
+            } else {
+                current += c;
+            }
+        }
+        result.add(current);
+        return result;
     }
 }
