@@ -111,6 +111,27 @@ public with sharing class DataMigrationController {
     return data;
 }
 
+private static List<String> parseCsvLine(String line) {
+    List<String> result = new List<String>();
+    Boolean inQuotes = false;
+    String current = '';
+
+    for (Integer i = 0; i < line.length(); i++) {
+        String c = line.substring(i, i+1);
+
+        if (c == '"') {
+            inQuotes = !inQuotes;
+        } else if (c == ',' && !inQuotes) {
+            result.add(current);
+            current = '';
+        } else {
+            current += c;
+        }
+    }
+    result.add(current);
+    return result;
+}
+
     @AuraEnabled
     public static void cleanAllData() {
         DataCleanupUtility.cleanAllData();
