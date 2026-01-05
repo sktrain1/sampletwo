@@ -1,5 +1,8 @@
-String delimiter = ',';
-if (programsFileId != null) {
-    ContentVersion cv = [SELECT PathOnClient FROM ContentVersion WHERE Id = :programsFileId];
+private static List<Map<String,String>> parseCsv(Id contentVersionId) {
+    // Determine delimiter by file extension
+    ContentVersion cv = [SELECT PathOnClient FROM ContentVersion WHERE Id = :contentVersionId];
+    String delimiter = ',';
     if (cv.PathOnClient.endsWith('.txt')) delimiter = '\t';
+
+    return CsvUtil.parseFile(contentVersionId, delimiter);
 }
