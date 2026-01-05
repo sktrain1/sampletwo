@@ -1,0 +1,5 @@
+String delimiter = ',';
+if (programsFileId != null) {
+    ContentVersion cv = [SELECT PathOnClient FROM ContentVersion WHERE Id = :programsFileId];
+    if (cv.PathOnClient.endsWith('.txt')) delimiter = '\t';
+}
