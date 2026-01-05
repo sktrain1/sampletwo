@@ -1,9 +1,5 @@
 public with sharing class DataMigrationController {
 
-    /* ============================================================
-       ENTRY POINT (VERY LIGHTWEIGHT)
-       ============================================================ */
-
     @AuraEnabled
     public static Id startMigration(
         Id programsFileId,
@@ -16,14 +12,15 @@ public with sharing class DataMigrationController {
         );
         insert job;
 
-        System.enqueueJob(
-            new DataMigrationQueueable(
+        Database.executeBatch(
+            new DataMigrationBatch(
                 programsFileId,
                 chaptersFileId,
                 programChaptersFileId,
                 productTemplatesFileId,
                 job.Id
-            )
+            ),
+            200
         );
 
         return job.Id;
@@ -50,96 +47,5 @@ public with sharing class DataMigrationController {
     @AuraEnabled
     public static void cleanAllData() {
         DataCleanupUtility.cleanAllData();
-    }
-
-    /* ============================================================
-       CSV PARSING (USED BY QUEUEABLE)
-       ============================================================ */
-
-    public static List<Map<String,String>> parseCsv(Id contentVersionId) {
-        ContentVersion cv = [
-            SELECT VersionData
-            FROM ContentVersion
-            WHERE Id = :contentVersionId
-        ];
-
-        String csv;
-        try {
-            csv = cv.VersionData.toString();
-        } catch (Exception e) {
-            throw new AuraHandledException(
-                'Invalid file encoding. Please upload a CSV saved as UTF-8.'
-            );
-        }
-
-        List<String> rows = splitLines(csv);
-        if (rows.isEmpty()) return new List<Map<String,String>>();
-
-        List<String> headers = parseCsvLine(
-            rows[0].replace('\uFEFF', '')
-        );
-
-        List<Map<String,String>> data = new List<Map<String,String>>();
-
-        for (Integer i = 1; i < rows.size(); i++) {
-            if (String.isBlank(rows[i])) continue;
-
-            List<String> cols = parseCsvLine(rows[i]);
-            Map<String,String> rowMap = new Map<String,String>();
-
-            for (Integer j = 0; j < headers.size(); j++) {
-                rowMap.put(
-                    headers[j].trim(),
-                    j < cols.size() ? cols[j].trim() : null
-                );
-            }
-            data.add(rowMap);
-        }
-        return data;
-    }
-
-    /* ============================================================
-       NO-REGEX HELPERS
-       ============================================================ */
-
-    private static List<String> splitLines(String text) {
-        List<String> lines = new List<String>();
-        String current = '';
-
-        for (Integer i = 0; i < text.length(); i++) {
-            String c = text.substring(i, i + 1);
-
-            if (c == '\n') {
-                lines.add(current);
-                current = '';
-            } else if (c != '\r') {
-                current += c;
-            }
-        }
-        if (current != '') {
-            lines.add(current);
-        }
-        return lines;
-    }
-
-    private static List<String> parseCsvLine(String line) {
-        List<String> result = new List<String>();
-        Boolean inQuotes = false;
-        String current = '';
-
-        for (Integer i = 0; i < line.length(); i++) {
-            String c = line.substring(i, i + 1);
-
-            if (c == '"') {
-                inQuotes = !inQuotes;
-            } else if (c == ',' && !inQuotes) {
-                result.add(current);
-                current = '';
-            } else {
-                current += c;
-            }
-        }
-        result.add(current);
-        return result;
     }
 }
