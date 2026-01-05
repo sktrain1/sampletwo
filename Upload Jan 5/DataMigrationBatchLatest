@@ -1,0 +1,188 @@
+global class DataMigrationBatch
+    implements Database.Batchable<Map<String,String>>, Database.Stateful {
+
+    // File IDs
+    global Id programsFileId;
+    global Id chaptersFileId;
+    global Id programChaptersFileId;
+    global Id productTemplatesFileId;
+    global Id migrationJobId;
+
+    // Phase control
+    global Integer phase = 1;
+
+    // Lookups
+    global Map<String, Id> programMap = new Map<String, Id>();
+    global Map<String, Id> chapterMap = new Map<String, Id>();
+
+    // Errors
+    global List<Map<String,String>> programErrors = new List<Map<String,String>>();
+    global List<Map<String,String>> chapterErrors = new List<Map<String,String>>();
+    global List<Map<String,String>> programChapterErrors = new List<Map<String,String>>();
+    global List<Map<String,String>> templateErrors = new List<Map<String,String>>();
+
+    global DataMigrationBatch(
+        Id programsFileId,
+        Id chaptersFileId,
+        Id programChaptersFileId,
+        Id productTemplatesFileId,
+        Id migrationJobId
+    ) {
+        this.programsFileId = programsFileId;
+        this.chaptersFileId = chaptersFileId;
+        this.programChaptersFileId = programChaptersFileId;
+        this.productTemplatesFileId = productTemplatesFileId;
+        this.migrationJobId = migrationJobId;
+    }
+
+    global Iterable<Map<String,String>> start(Database.BatchableContext bc) {
+        update new Migration_Job__c(
+            Id = migrationJobId,
+            Status__c = phase == 1 ? 'Processing Programs' :
+                        phase == 2 ? 'Processing Chapters' :
+                        phase == 3 ? 'Processing Program Chapters' :
+                                     'Processing Templates'
+        );
+
+        return CsvUtil.parseCsv(
+            phase == 1 ? programsFileId :
+            phase == 2 ? chaptersFileId :
+            phase == 3 ? programChaptersFileId :
+                         productTemplatesFileId
+        );
+    }
+
+    global void execute(Database.BatchableContext bc, List<Map<String,String>> scope) {
+
+        if (phase == 1) insertPrograms(scope);
+        else if (phase == 2) insertChapters(scope);
+        else if (phase == 3) insertProgramChapters(scope);
+        else insertTemplates(scope);
+    }
+
+    global void finish(Database.BatchableContext bc) {
+        if (phase < 4) {
+            phase++;
+            Database.executeBatch(this, 200);
+            return;
+        }
+
+        Migration_Job__c job = new Migration_Job__c(
+            Id = migrationJobId,
+            Status__c = programErrors.isEmpty() &&
+                        chapterErrors.isEmpty() &&
+                        programChapterErrors.isEmpty() &&
+                        templateErrors.isEmpty()
+                        ? 'Completed'
+                        : 'Completed With Errors'
+        );
+
+        if (!programErrors.isEmpty())
+            job.Programs_Error_File_Id__c =
+                saveCSV('Programs_Errors.csv', toCSV(programErrors));
+
+        if (!chapterErrors.isEmpty())
+            job.Chapters_Error_File_Id__c =
+                saveCSV('Chapters_Errors.csv', toCSV(chapterErrors));
+
+        if (!programChapterErrors.isEmpty())
+            job.Program_Chapters_Error_File_Id__c =
+                saveCSV('Program_Chapters_Errors.csv', toCSV(programChapterErrors));
+
+        if (!templateErrors.isEmpty())
+            job.Templates_Error_File_Id__c =
+                saveCSV('Templates_Errors.csv', toCSV(templateErrors));
+
+        update job;
+    }
+
+    /* ================= INSERT METHODS ================= */
+
+    private void insertPrograms(List<Map<String,String>> rows) {
+        List<Program__c> recs = new List<Program__c>();
+        for (Map<String,String> r : rows)
+            recs.add(new Program__c(Name = r.get('Name')));
+
+        Database.SaveResult[] sr = Database.insert(recs, false);
+        for (Integer i = 0; i < sr.size(); i++)
+            if (sr[i].isSuccess())
+                programMap.put(rows[i].get('Id'), sr[i].getId());
+            else programErrors.add(addError(rows[i], sr[i].getErrors()[0].getMessage()));
+    }
+
+    private void insertChapters(List<Map<String,String>> rows) {
+        List<Chapter__c> recs = new List<Chapter__c>();
+        for (Map<String,String> r : rows)
+            if (programMap.containsKey(r.get('Program__c')))
+                recs.add(new Chapter__c(
+                    Name = r.get('Name'),
+                    Program__c = programMap.get(r.get('Program__c'))
+                ));
+            else chapterErrors.add(addError(r,'Program lookup failed'));
+
+        Database.SaveResult[] sr = Database.insert(recs, false);
+        for (Integer i = 0; i < sr.size(); i++)
+            if (sr[i].isSuccess())
+                chapterMap.put(rows[i].get('Id'), sr[i].getId());
+            else chapterErrors.add(addError(rows[i], sr[i].getErrors()[0].getMessage()));
+    }
+
+    private void insertProgramChapters(List<Map<String,String>> rows) {
+        List<Program_Chapter__c> recs = new List<Program_Chapter__c>();
+        for (Map<String,String> r : rows)
+            if (programMap.containsKey(r.get('Program_Name__c')) &&
+                chapterMap.containsKey(r.get('Chapter_Name__c')))
+                recs.add(new Program_Chapter__c(
+                    Program_Name__c = programMap.get(r.get('Program_Name__c')),
+                    Chapter_Name__c = chapterMap.get(r.get('Chapter_Name__c'))
+                ));
+            else programChapterErrors.add(addError(r,'Lookup failed'));
+
+        Database.insert(recs, false);
+    }
+
+    private void insertTemplates(List<Map<String,String>> rows) {
+        List<Product_Template__c> recs = new List<Product_Template__c>();
+        for (Map<String,String> r : rows)
+            if (programMap.containsKey(r.get('Program_Name__c')) &&
+                chapterMap.containsKey(r.get('Chapter_Name__c')))
+                recs.add(new Product_Template__c(
+                    Program_Name__c = programMap.get(r.get('Program_Name__c')),
+                    Chapter_Name__c = chapterMap.get(r.get('Chapter_Name__c'))
+                ));
+            else templateErrors.add(addError(r,'Lookup failed'));
+
+        Database.insert(recs, false);
+    }
+
+    /* ================= HELPERS ================= */
+
+    private Map<String,String> addError(Map<String,String> row, String msg) {
+        Map<String,String> r = new Map<String,String>(row);
+        r.put('Error_Message', msg);
+        return r;
+    }
+
+    private String toCSV(List<Map<String,String>> rows) {
+        List<String> headers = new List<String>(rows[0].keySet());
+        List<String> out = new List<String>();
+        out.add(String.join(headers, ','));
+        for (Map<String,String> r : rows) {
+            List<String> line = new List<String>();
+            for (String h : headers)
+                line.add('"' + String.valueOf(r.get(h)).replace('"','""') + '"');
+            out.add(String.join(line, ','));
+        }
+        return String.join(out, '\n');
+    }
+
+    private Id saveCSV(String name, String body) {
+        ContentVersion cv = new ContentVersion(
+            Title = name,
+            PathOnClient = name,
+            VersionData = Blob.valueOf(body)
+        );
+        insert cv;
+        return cv.Id;
+    }
+}
