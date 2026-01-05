@@ -1,0 +1,68 @@
+public class CsvUtil {
+
+    public static List<Map<String,String>> parseCsv(Id contentVersionId) {
+        ContentVersion cv = [
+            SELECT VersionData
+            FROM ContentVersion
+            WHERE Id = :contentVersionId
+        ];
+
+        String csv = cv.VersionData.toString();
+        List<String> rows = splitLines(csv);
+
+        List<String> headers =
+            parseLine(rows[0].replace('\uFEFF',''));
+
+        List<Map<String,String>> result = new List<Map<String,String>>();
+
+        for (Integer i = 1; i < rows.size(); i++) {
+            if (String.isBlank(rows[i])) continue;
+
+            List<String> cols = parseLine(rows[i]);
+            Map<String,String> row = new Map<String,String>();
+
+            for (Integer j = 0; j < headers.size(); j++) {
+                row.put(
+                    headers[j],
+                    j < cols.size() ? cols[j] : null
+                );
+            }
+            result.add(row);
+        }
+        return result;
+    }
+
+    private static List<String> splitLines(String text) {
+        List<String> lines = new List<String>();
+        String current = '';
+
+        for (Integer i = 0; i < text.length(); i++) {
+            String c = text.substring(i, i+1);
+            if (c == '\n') {
+                lines.add(current);
+                current = '';
+            } else if (c != '\r') {
+                current += c;
+            }
+        }
+        if (current != '') lines.add(current);
+        return lines;
+    }
+
+    private static List<String> parseLine(String line) {
+        List<String> out = new List<String>();
+        Boolean inQuotes = false;
+        String cur = '';
+
+        for (Integer i = 0; i < line.length(); i++) {
+            String c = line.substring(i, i+1);
+            if (c == '"') inQuotes = !inQuotes;
+            else if (c == ',' && !inQuotes) {
+                out.add(cur);
+                cur = '';
+            } else cur += c;
+        }
+        out.add(cur);
+        return out;
+    }
+}
