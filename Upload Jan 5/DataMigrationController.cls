@@ -76,6 +76,43 @@ public with sharing class DataMigrationController {
         return data;
     }
 
+    private static List<Map<String,String>> parseCsv(Id contentVersionId) {
+    ContentVersion cv = [
+        SELECT VersionData
+        FROM ContentVersion
+        WHERE Id = :contentVersionId
+    ];
+
+    // Explicit UTF-8 decoding
+    String csv = cv.VersionData.toString();
+
+    // Normalize line endings (handles Windows / Mac / Linux)
+    csv = csv.replace('\r\n', '\n').replace('\r', '\n');
+
+    List<String> rows = csv.split('\n');
+
+    // Remove BOM if present
+    List<String> headers = rows[0].replace('\uFEFF', '').split(',');
+
+    List<Map<String,String>> data = new List<Map<String,String>>();
+
+    for (Integer i = 1; i < rows.size(); i++) {
+        if (String.isBlank(rows[i])) continue;
+
+        List<String> cols = rows[i].split(',');
+        Map<String,String> rowMap = new Map<String,String>();
+
+        for (Integer j = 0; j < headers.size(); j++) {
+            rowMap.put(
+                headers[j].trim(),
+                j < cols.size() ? cols[j].trim() : null
+            );
+        }
+        data.add(rowMap);
+    }
+    return data;
+}
+
     @AuraEnabled
     public static void cleanAllData() {
         DataCleanupUtility.cleanAllData();
