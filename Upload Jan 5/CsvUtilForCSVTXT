@@ -1,9 +1,9 @@
 public class CsvUtil {
 
-    // Default delimiter is comma, pass '\t' for tab-delimited
-    public static List<Map<String,String>> parseCsv(Id contentVersionId, String delimiter) {
+    // delimiter: ',' for CSV, '\t' for TXT
+    public static List<Map<String,String>> parseFile(Id contentVersionId, String delimiter) {
         ContentVersion cv = [
-            SELECT VersionData
+            SELECT VersionData, PathOnClient
             FROM ContentVersion
             WHERE Id = :contentVersionId
         ];
@@ -11,34 +11,28 @@ public class CsvUtil {
         String text = cv.VersionData.toString();
         List<String> rows = splitLines(text);
 
+        // Remove BOM and parse headers
         List<String> headers = parseLine(rows[0].replace('\uFEFF',''), delimiter);
 
         List<Map<String,String>> result = new List<Map<String,String>>();
-
         for (Integer i = 1; i < rows.size(); i++) {
             if (String.isBlank(rows[i])) continue;
 
             List<String> cols = parseLine(rows[i], delimiter);
             Map<String,String> row = new Map<String,String>();
-
             for (Integer j = 0; j < headers.size(); j++) {
-                row.put(
-                    headers[j],
-                    j < cols.size() ? cols[j] : null
-                );
+                row.put(headers[j], j < cols.size() ? cols[j].trim() : null);
             }
             result.add(row);
         }
-
         return result;
     }
 
     private static List<String> splitLines(String text) {
         List<String> lines = new List<String>();
         String current = '';
-
         for (Integer i = 0; i < text.length(); i++) {
-            String c = text.substring(i, i+1);
+            String c = text.substring(i,i+1);
             if (c == '\n') {
                 lines.add(current);
                 current = '';
@@ -54,9 +48,8 @@ public class CsvUtil {
         List<String> out = new List<String>();
         Boolean inQuotes = false;
         String cur = '';
-
         for (Integer i = 0; i < line.length(); i++) {
-            String c = line.substring(i, i+1);
+            String c = line.substring(i,i+1);
             if (c == '"') inQuotes = !inQuotes;
             else if (c == delimiter && !inQuotes) {
                 out.add(cur);
