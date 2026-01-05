@@ -83,23 +83,21 @@ public with sharing class DataMigrationController {
         WHERE Id = :contentVersionId
     ];
 
-    // Explicit UTF-8 decoding
     String csv = cv.VersionData.toString();
-
-    // Normalize line endings (handles Windows / Mac / Linux)
     csv = csv.replace('\r\n', '\n').replace('\r', '\n');
 
     List<String> rows = csv.split('\n');
 
-    // Remove BOM if present
-    List<String> headers = rows[0].replace('\uFEFF', '').split(',');
+    List<String> headers = parseCsvLine(
+        rows[0].replace('\uFEFF','')
+    );
 
     List<Map<String,String>> data = new List<Map<String,String>>();
 
     for (Integer i = 1; i < rows.size(); i++) {
         if (String.isBlank(rows[i])) continue;
 
-        List<String> cols = rows[i].split(',');
+        List<String> cols = parseCsvLine(rows[i]);
         Map<String,String> rowMap = new Map<String,String>();
 
         for (Integer j = 0; j < headers.size(); j++) {
