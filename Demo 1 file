@@ -1,0 +1,443 @@
+Digital Enrollment Platform
+Technical and Architecture Specification
+1. Document Purpose, Goal, and Scope
+1.1 Purpose
+
+The purpose of this document is to define the technical architecture, integration design, and operational model of the [Company Name] Digital Enrollment Platform implemented on Salesforce.
+
+This document acts as the authoritative technical reference for:
+
+External customers integrating with the platform
+
+Internal architecture and development teams
+
+Security, audit, and compliance stakeholders
+
+1.2 Goal
+
+The primary goal of this document is to:
+
+Enable fast and consistent onboarding of new customers
+
+Provide clear architectural visibility into the platform
+
+Abstract Salesforce internal complexity from external clients
+
+Ensure integrations are secure, scalable, and maintainable
+
+1.3 Scope
+
+This document covers:
+
+High-level and logical architecture
+
+API integration patterns
+
+Unified enrollment payload design
+
+Salesforce internal processing
+
+Status management strategies
+
+Batch and automation architecture
+
+Error handling and resiliency
+
+Non-functional requirements
+
+Onboarding considerations
+
+Out of scope:
+
+UI functionality
+
+Manual enrollment processes
+
+Salesforce configuration details not relevant to API consumers
+
+1.4 Intended Audience
+
+Client solution architects
+
+Integration developers
+
+Salesforce developers
+
+Enterprise architects
+
+Security and compliance reviewers
+
+2. Architectural Overview
+2.1 High-Level Architecture Diagram
+
+Insert High-Level Architecture Diagram Here
+
+The high-level architecture diagram provides a consolidated view of how external customer systems interact with the Digital Enrollment Platform hosted on Salesforce.
+It depicts inbound API calls, internal processing layers, and outbound communication mechanisms.
+
+This diagram should be reviewed before reading the detailed API sections, as it establishes the conceptual flow of data across systems.
+
+2.2 Architectural Principles
+
+The platform is built on the following core principles:
+
+API-First Design
+All integrations are performed via RESTful APIs.
+
+Unified Data Contract
+A single payload represents the full enrollment context.
+
+Loose Coupling
+External systems are not exposed to Salesforce internal structures.
+
+Salesforce-Native Automation
+Business rules are implemented using Apex and Flows.
+
+Security by Design
+Authentication, authorization, and data protection are enforced at every layer.
+
+2.3 Logical Architecture Components
+
+External Layer
+
+Customer A systems
+
+Customer B systems
+
+Customer C systems
+
+Integration Layer
+
+Salesforce Apex REST APIs
+
+OAuth authentication services
+
+Application Layer
+
+Apex REST Controllers
+
+Business logic execution
+
+Flow automation
+
+Processing Layer
+
+Batch Apex jobs
+
+Scheduled execution
+
+Data Layer
+
+Salesforce Account
+
+Salesforce Contact
+
+Salesforce Opportunity (Enrollment)
+
+3. Integration Patterns and Communication Models
+3.1 Overview
+
+The platform supports multiple integration patterns to accommodate varying customer technical capabilities and operational preferences.
+
+3.2 Supported Patterns
+Customer	Enrollment Submission	Status Retrieval	Description
+A	Push	Push	Enrollment submitted via API; status sent via callback
+B	Push	Push	Same as Customer A
+C	Push	Pull	Enrollment submitted via API; status retrieved on demand
+3.3 Design Rationale
+
+Push-based callbacks reduce polling overhead
+
+Pull-based status retrieval provides flexibility
+
+Both models coexist without impacting core processing
+
+4. Security Architecture
+4.1 Authentication Model
+
+The platform uses OAuth 2.0 Client Credentials Grant.
+
+Each customer is provisioned with:
+
+Client ID
+
+Client Secret
+
+Token endpoint
+
+Tokens must be included in all API calls.
+
+4.2 Authorization
+
+Access is controlled at the API level
+
+Each client is authorized only for assigned endpoints
+
+Customer-specific configurations are enforced internally
+
+4.3 Transport and Network Security
+
+HTTPS using TLS 1.2 or higher
+
+Optional IP whitelisting
+
+Protection against malformed payloads
+
+4.4 Data Security and Compliance
+
+PII encrypted at rest
+
+Salesforce field-level security enforced
+
+Audit logs retained for compliance
+
+Secure handling of credentials and secrets
+
+5. Unified Enrollment API Architecture
+5.1 Architectural Decision
+
+The platform intentionally exposes single enrollment endpoints rather than object-level APIs.
+
+This ensures:
+
+Reduced integration complexity
+
+Atomic processing
+
+Strong transactional integrity
+
+5.2 Unified Payload Concept
+
+Each enrollment request contains:
+
+Account information
+
+Contact information
+
+Opportunity (Enrollment) information
+
+All data is processed within a single Salesforce transaction.
+
+5.3 Idempotency Strategy
+
+externalReferenceId uniquely identifies an enrollment
+
+Duplicate submissions are detected and handled gracefully
+
+Prevents duplicate data creation
+
+6. Enrollment API Endpoints
+6.1 OnerDigitalService
+
+Purpose
+Processes enrollments submitted by Customer A.
+
+Endpoint
+
+POST /services/apexrest/oner/v1/enrollment
+
+6.2 AweDigitalService
+
+Purpose
+Processes enrollments submitted by Customers B and C.
+
+Endpoint
+
+POST /services/apexrest/awe/v1/enrollment
+
+7. Enrollment Data Model (Unified Payload)
+7.1 Account Data
+
+The Account section represents the legal or individual entity associated with the enrollment.
+
+Key characteristics:
+
+Upserted using configured identifiers
+
+Address normalized and validated
+
+Account type influences downstream rules
+
+7.2 Contact Data
+
+The Contact section represents the primary individual associated with the enrollment.
+
+Key characteristics:
+
+One primary contact per enrollment
+
+Linked directly to the Account
+
+Used for communication and verification
+
+7.3 Opportunity Data (Enrollment)
+
+The Opportunity represents the enrollment lifecycle.
+
+Key characteristics:
+
+Created per enrollment
+
+Status-driven lifecycle
+
+Central record for reporting and automation
+
+8. Salesforce Internal Processing Architecture
+8.1 Processing Flow
+
+REST request received
+
+Authentication and validation
+
+Payload parsing
+
+Account upsert
+
+Contact creation or update
+
+Opportunity creation
+
+Flow execution
+
+Response generation
+
+All steps occur within a single transaction boundary.
+
+8.2 Automation Architecture
+
+Record-Triggered Flows
+
+Triggered on Opportunity creation
+
+Triggered on status changes
+
+Autolaunched Flows
+
+Eligibility checks
+
+Business rule enforcement
+
+Status transitions
+
+9. Enrollment Status Management
+9.1 Status Lifecycle
+
+Typical lifecycle:
+
+Received
+
+In Progress
+
+Approved
+
+Rejected
+
+Activated
+
+Status is stored and managed on the Opportunity.
+
+9.2 Push-Based Status Updates
+
+Batch Apex jobs run every 24 hours
+
+Identify status changes
+
+Send callbacks to customers A and B
+
+9.3 Pull-Based Status Retrieval
+
+Customer C retrieves status using a dedicated API endpoint, enabling real-time visibility without callbacks.
+
+10. Batch Processing Architecture
+10.1 Purpose of Batch Jobs
+
+Batch Apex jobs are used to:
+
+Handle outbound communication
+
+Manage retry logic
+
+Ensure scalability
+
+10.2 Batch Job Characteristics
+Batch Job	Responsibility	Execution
+EnrollmentStatusBatchA	Status callbacks for A	Daily
+EnrollmentStatusBatchB	Status callbacks for B	Daily
+11. Error Handling, Resiliency, and Monitoring
+11.1 Error Handling Strategy
+
+Standardized error responses
+
+Field-level validation messages
+
+Clear error codes for client troubleshooting
+
+11.2 Resiliency
+
+Retry-safe APIs
+
+Idempotent design
+
+Transaction rollback on failure
+
+11.3 Monitoring and Logging
+
+API invocation logging
+
+Batch job monitoring
+
+Error tracking and alerts
+
+12. Non-Functional Requirements
+12.1 Performance
+
+APIs designed for synchronous processing
+
+Payload size limits enforced
+
+Batch processing for outbound load
+
+12.2 Scalability
+
+Horizontally scalable via Salesforce platform
+
+Designed for increasing customer volume
+
+12.3 Availability
+
+Platform availability aligned with Salesforce SLAs
+
+No single point of failure at integration layer
+
+13. Customer Onboarding and Extensibility
+13.1 Onboarding Steps
+
+Security agreement
+
+Credential provisioning
+
+API access configuration
+
+Sandbox testing
+
+Production enablement
+
+13.2 Extensibility
+
+API versioning strategy
+
+Customer-specific configuration support
+
+Backward compatibility guarantees
+
+14. Appendix
+
+Architecture diagrams
+
+Sequence diagrams
+
+Field-level definitions
+
+Sample API payloads
+
+Support and escalation contacts
