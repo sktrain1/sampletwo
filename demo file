@@ -1,0 +1,328 @@
+Digital Enrollment Platform
+Technical and Architecture Document
+1. Document Purpose and Goal
+1.1 Purpose
+
+The purpose of this document is to provide a complete technical and architectural overview of the [Company Name] Digital Enrollment Platform.
+This document serves as the primary reference for customers and partners integrating with the platform.
+
+It explains:
+
+API integration approaches
+
+Unified enrollment payload design
+
+Salesforce-based internal architecture
+
+Security and authentication mechanisms
+
+Enrollment status management
+
+Batch processing and automation
+
+Customer onboarding guidance
+
+1.2 Goal
+
+The goal of this document is to enable new customers to onboard with minimal effort, without requiring any knowledge of Salesforce internal object models, while maintaining strong security, scalability, and auditability.
+
+1.3 Intended Audience
+
+Client technical teams
+
+Solution architects
+
+API developers
+
+Security and compliance teams
+
+Internal Salesforce development teams
+
+2. Architectural Overview
+2.1 High-Level Architecture Diagram
+
+Insert High-Level Architecture Diagram Here
+
+The architecture diagram illustrates the interaction between external customer systems and the [Company Name] Digital Enrollment Platform hosted on Salesforce.
+It shows inbound enrollment APIs, internal processing within Salesforce, and outbound status communication using batch processing or pull-based APIs.
+
+2.2 Architecture Principles
+
+API-first integration
+
+Unified enrollment payload
+
+Loose coupling between systems
+
+Salesforce-native processing
+
+Secure and scalable design
+
+Clear separation of inbound and outbound responsibilities
+
+2.3 System Components
+
+External Systems
+
+Customer A
+
+Customer B
+
+Customer C
+
+Integration Layer (Salesforce)
+
+Apex REST APIs
+
+OnerDigitalService
+
+AweDigitalService
+
+getStatus
+
+Application Layer
+
+Apex REST Controllers
+
+Salesforce Flows
+
+Batch Apex Jobs
+
+Data Layer
+
+Salesforce Standard Objects
+
+Account
+
+Contact
+
+Opportunity (Enrollment)
+
+3. Supported Integration Patterns
+
+The platform supports multiple integration patterns to meet different customer requirements.
+
+Customer	Enrollment Submission	Status Retrieval	Integration Pattern
+A	Push (REST API)	Push (Callback)	Push–Push
+B	Push (REST API)	Push (Callback)	Push–Push
+C	Push (REST API)	Pull (getStatus API)	Push–Pull
+4. Security Architecture
+4.1 Authentication and Authorization
+
+OAuth 2.0 using Client Credentials Grant
+
+Each customer receives a unique client ID and client secret
+
+Access token is required for all API requests
+
+Token expiration is enforced
+
+4.2 Transport Security
+
+HTTPS with TLS 1.2 or higher
+
+Optional IP whitelisting per customer
+
+All requests validated at API entry point
+
+4.3 Data Protection
+
+Personally Identifiable Information (PII) encrypted at rest
+
+Field-level security enforced in Salesforce
+
+API access and transactions are auditable
+
+5. Unified Enrollment API Design
+5.1 Design Overview
+
+The Digital Enrollment Platform exposes single-purpose enrollment endpoints.
+Each enrollment request includes all required data for processing an enrollment.
+
+There are:
+
+No separate APIs for Account, Contact, or Opportunity
+
+No requirement for customers to understand Salesforce object structures
+
+All data is processed in a single transaction.
+
+5.2 Unified Enrollment Payload Structure
+externalReferenceId
+sourceSystem
+enrollmentType
+account
+contact
+opportunity
+
+6. Enrollment API Endpoints
+6.1 OnerDigitalService (Customer A)
+
+Endpoint:
+
+POST /services/apexrest/oner/v1/enrollment
+
+6.2 AweDigitalService (Customers B and C)
+
+Endpoint:
+
+POST /services/apexrest/awe/v1/enrollment
+
+7. Enrollment Payload Details
+7.1 Account Data
+
+The Account section contains all information required to create or update an Account.
+
+accountType
+accountName
+taxId
+billingAddress
+
+
+Processing Rules:
+
+Account is upserted using configured external identifiers
+
+Address data is normalized
+
+Account type drives validation and business rules
+
+7.2 Contact Data
+
+The Contact section represents the primary applicant or authorized contact.
+
+firstName
+lastName
+email
+phone
+dateOfBirth
+
+
+Processing Rules:
+
+Contact is created or updated under the Account
+
+One primary Contact per enrollment
+
+Email validation enforced
+
+7.3 Opportunity Data (Enrollment)
+
+The Opportunity represents the enrollment lifecycle.
+
+productCode
+planId
+requestedEffectiveDate
+channel
+
+
+Processing Rules:
+
+A new Opportunity is created per enrollment
+
+Initial status is set to “Received”
+
+Opportunity is linked to the Account and Contact
+
+8. Salesforce Internal Processing Model
+8.1 Transaction Flow
+
+REST API request received
+
+Unified payload validation
+
+Account creation or update
+
+Contact creation or update
+
+Opportunity creation
+
+Flow automation triggered
+
+Response returned to client
+
+All steps execute within a single Salesforce transaction.
+
+8.2 Automation
+
+Record-Triggered Flows
+
+Triggered on Opportunity creation
+
+Triggered on status updates
+
+Autolaunched Flows
+
+Eligibility validation
+
+Status transitions
+
+Downstream processing
+
+9. Enrollment Status Management
+9.1 Push-Based Status Updates (Customers A and B)
+
+Batch Apex jobs run once every 24 hours
+
+Status changes are identified
+
+Status updates are sent to customer callback endpoints
+
+9.2 Pull-Based Status Retrieval (Customer C)
+
+Endpoint:
+
+GET /services/apexrest/awe/v1/enrollment/status/{externalReferenceId}
+
+
+This allows customers to retrieve enrollment status on demand.
+
+10. Batch Processing Architecture
+
+Batch Apex jobs are used to manage outbound status communication.
+
+Batch Job Name	Purpose	Frequency
+EnrollmentStatusBatchA	Status callbacks for Customer A	Daily
+EnrollmentStatusBatchB	Status callbacks for Customer B	Daily
+11. Error Handling and Idempotency
+11.1 Error Handling
+
+All APIs return standardized error responses containing:
+
+Error code
+
+Error message
+
+Object and field-level details where applicable
+
+11.2 Idempotency
+
+externalReferenceId is mandatory
+
+Duplicate enrollment submissions return existing enrollment information
+
+Prevents duplicate Opportunity creation
+
+12. Customer Onboarding Process
+
+Security and compliance agreement
+
+Client credential provisioning
+
+Integration pattern selection
+
+Sandbox testing
+
+Production enablement
+
+13. Appendix
+
+High-level architecture diagram
+
+Sequence diagrams
+
+Field-level specifications
+
+Sample API requests and responses
+
+Support and escalation contacts
