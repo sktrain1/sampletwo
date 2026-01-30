@@ -1,0 +1,316 @@
+Digital Enrollment Platform
+Customer Integration & Architecture Guide
+1. Document Purpose and Goal
+1.1 Purpose
+
+The purpose of this document is to provide end customers with a technical integration and architecture overview of the [Company Name] Digital Enrollment Platform.
+
+This document explains:
+
+How customers connect to the platform
+
+Available API integration models
+
+Enrollment submission structure
+
+Enrollment status retrieval mechanisms
+
+Security and authentication requirements
+
+Operational expectations for integration
+
+Internal system implementation details are intentionally abstracted.
+
+1.2 Goal
+
+The goal of this document is to enable customers to:
+
+Integrate quickly and securely
+
+Understand supported interaction patterns
+
+Submit enrollments using a unified API
+
+Retrieve enrollment status reliably
+
+Onboard with minimal technical dependencies
+
+1.3 Intended Audience
+
+Customer solution architects
+
+Integration and middleware teams
+
+API developers
+
+Security and compliance teams
+
+2. Platform Architecture Overview
+2.1 High-Level Architecture Diagram
+
+Insert Customer-Facing Architecture Diagram Here
+
+The diagram illustrates how customer systems interact with the Digital Enrollment Platform using secure REST APIs.
+It shows inbound enrollment submissions and outbound or on-demand status retrieval.
+
+2.2 Architecture Overview
+
+At a high level, the platform consists of:
+
+Customer Systems
+Applications or middleware submitting enrollments and retrieving status
+
+Digital Enrollment APIs
+Secure REST endpoints exposed by [Company Name]
+
+Processing & Automation Layer
+Responsible for validating, processing, and managing enrollments
+
+Status Communication Layer
+Supports both callback-based and on-demand status retrieval
+
+2.3 Key Architectural Characteristics
+
+REST-based integration
+
+Unified data contract
+
+Secure, token-based authentication
+
+Asynchronous and synchronous communication support
+
+Scalable and resilient processing
+
+3. Supported Integration Models
+
+The platform supports multiple integration models to meet different customer needs.
+
+Model	Enrollment Submission	Status Retrieval	Typical Use Case
+Push–Push	REST API	Callback	Fully automated integrations
+Push–Pull	REST API	getStatus API	Customer-controlled polling
+
+Customers select the model during onboarding.
+
+4. Security and Access
+4.1 Authentication
+
+All APIs are secured using OAuth 2.0 Client Credentials Grant.
+
+Each customer is provided with:
+
+Client ID
+
+Client Secret
+
+Token endpoint
+
+An access token must be included in every API request.
+
+4.2 Transport Security
+
+HTTPS (TLS 1.2 or higher)
+
+Requests without valid tokens are rejected
+
+Optional IP restrictions may apply
+
+4.3 Data Protection
+
+Sensitive data is protected in transit and at rest
+
+Access is limited to authorized customers
+
+All transactions are logged for audit purposes
+
+5. Enrollment API Overview
+5.1 Unified Enrollment Design
+
+The Digital Enrollment Platform exposes single enrollment APIs.
+
+Each request contains:
+
+Account information
+
+Contact information
+
+Enrollment details
+
+There are no separate APIs for individual data entities.
+
+5.2 Enrollment Endpoints
+
+OnerDigitalService
+
+POST /services/apexrest/oner/v1/enrollment
+
+
+AweDigitalService
+
+POST /services/apexrest/awe/v1/enrollment
+
+
+The endpoint provided depends on the customer configuration.
+
+6. Enrollment Request Structure
+6.1 High-Level Payload Structure
+externalReferenceId
+sourceSystem
+enrollmentType
+account
+contact
+opportunity
+
+6.2 Account Information
+
+The Account section represents the individual or organization associated with the enrollment.
+
+Includes:
+
+Account type
+
+Legal or individual name
+
+Tax or external identifiers
+
+Address information
+
+6.3 Contact Information
+
+The Contact section represents the primary individual associated with the enrollment.
+
+Includes:
+
+Name
+
+Email
+
+Phone
+
+Date of birth (if applicable)
+
+6.4 Enrollment Details
+
+The Opportunity section represents the enrollment request.
+
+Includes:
+
+Product or plan identifiers
+
+Requested effective date
+
+Enrollment channel
+
+7. Enrollment Processing Behavior
+
+Each enrollment request is processed atomically
+
+Validation occurs at submission time
+
+Duplicate submissions are prevented using a unique reference ID
+
+A response is returned immediately indicating receipt or validation errors
+
+8. Enrollment Status Management
+8.1 Status Lifecycle
+
+Typical enrollment statuses include:
+
+Received
+
+In Progress
+
+Approved
+
+Rejected
+
+Activated
+
+8.2 Callback-Based Status Updates
+
+For customers using the Push–Push model:
+
+Status updates are sent automatically
+
+Callbacks occur on a scheduled basis
+
+Only changed statuses are transmitted
+
+8.3 On-Demand Status Retrieval
+
+For customers using the Push–Pull model:
+
+Status can be retrieved using a dedicated API
+
+Customers control when status is queried
+
+Supports real-time visibility
+
+Endpoint
+
+GET /services/apexrest/awe/v1/enrollment/status/{externalReferenceId}
+
+9. Error Handling and Response Standards
+9.1 Error Response Structure
+
+Error responses include:
+
+Error code
+
+Error description
+
+Field-level details where applicable
+
+9.2 Common Error Scenarios
+
+Authentication failures
+
+Validation errors
+
+Duplicate submissions
+
+System errors
+
+Clear error messages are provided to support troubleshooting.
+
+10. Operational Considerations
+10.1 Idempotency
+
+externalReferenceId must be unique
+
+Repeated requests return consistent results
+
+10.2 Performance Expectations
+
+APIs are synchronous
+
+Response times depend on payload size
+
+Bulk submissions are not supported unless explicitly agreed
+
+10.3 Availability
+
+Platform availability aligns with published SLAs
+
+Planned maintenance is communicated in advance
+
+11. Customer Onboarding Process
+
+Contract and security review
+
+Credential provisioning
+
+Integration model selection
+
+Sandbox testing
+
+Production go-live
+
+12. Appendix
+
+Architecture diagram
+
+Sample API requests and responses
+
+Field definitions
+
+Support and escalation contacts
