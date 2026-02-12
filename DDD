@@ -1,0 +1,346 @@
+Digital Enrollment Platform
+Internal Customer Onboarding Guide
+
+Audience: Onboarding / Implementation Team
+Purpose: Standard process for onboarding new API customers
+
+1. Objective
+
+This document defines the step-by-step process for onboarding new customers to the Digital Enrollment Platform, including:
+
+Configuration setup
+
+Credential provisioning
+
+UAT enablement
+
+Production go-live
+
+Monitoring and support handover
+
+The objective is to ensure secure, consistent, and controlled onboarding for every customer.
+
+2. High-Level Onboarding Flow
+Commercial Approval
+        ↓
+Customer Information Collection
+        ↓
+Internal Configuration & Credential Setup
+        ↓
+UAT Enablement
+        ↓
+Customer Testing & Certification
+        ↓
+Production Activation
+        ↓
+Monitoring & Support Handover
+
+3. Pre-Onboarding Checklist
+
+Before technical setup begins, confirm:
+
+✅ Commercial agreement executed
+
+✅ Compliance / risk approval received
+
+✅ Integration model confirmed (Pull or Push)
+
+✅ SLA tier defined
+
+✅ Technical contact identified
+
+Proceed only after confirmation from Business/Relationship team.
+
+4. Customer Information Collection
+
+Collect and record the following:
+
+4.1 Mandatory Information
+
+Organization name
+
+Technical contact details
+
+Integration model (Pull / Push)
+
+Target go-live timeline
+
+4.2 If Push Model Selected
+
+Callback endpoint URL
+
+Authentication method (OAuth / mTLS / IP restriction)
+
+Expected batch frequency
+
+Retry requirements (if customized)
+
+4.3 Security Configuration
+
+IP addresses for whitelisting
+
+Public key (if encryption required)
+
+All information must be stored in the onboarding tracker.
+
+5. Internal Setup Activities
+5.1 Create OAuth Client
+
+In Authorization Server:
+
+Generate client_id
+
+Generate client_secret
+
+Assign scope: enrollment
+
+Set token expiration policy
+
+Enable UAT access
+
+Store credentials in approved secrets management system.
+
+5.2 API Gateway Configuration
+
+In API Gateway:
+
+Enable client routing
+
+Apply rate limits (if applicable)
+
+Configure IP whitelist (if required)
+
+Enable request logging
+
+Enable correlation ID tracking
+
+5.3 Push Model Configuration (If Applicable)
+
+If Push Model is selected:
+
+Register callback endpoint
+
+Configure outbound authentication
+
+Set batch frequency
+
+Configure retry policy
+
+Enable delivery monitoring alerts
+
+6. Monitoring, Logging & Alerts Setup
+
+Before enabling UAT access, ensure monitoring is configured.
+
+6.1 API Traffic Monitoring
+
+Monitor via:
+
+API Gateway Dashboard
+
+Request count
+
+Success rate
+
+Error rate (4xx / 5xx)
+
+Latency metrics
+
+Application Monitoring Tool (APM)
+
+Processing times
+
+Backend errors
+
+Throughput
+
+6.2 Logging
+
+Ensure logging is enabled in:
+
+API Gateway (request/response logs)
+
+Enrollment Processing System
+
+Batch Push Service (if applicable)
+
+Logs must include:
+
+Correlation ID
+
+Client ID
+
+Timestamp
+
+Status code
+
+Error details (if any)
+
+Verify logs are visible in centralized logging platform (e.g., ELK/Splunk/Cloud Logging).
+
+6.3 Alerts Configuration
+
+Enable alerts for:
+
+High error rate (4xx / 5xx threshold)
+
+Repeated authentication failures
+
+Processing failures
+
+Batch push failures (non-200 response)
+
+System downtime
+
+Ensure alert ownership is assigned (Onboarding / Platform / Support team).
+
+7. UAT Enablement
+
+Provide customer with:
+
+UAT Base URL
+
+OAuth token endpoint
+
+UAT credentials
+
+API documentation
+
+Internally verify:
+
+Client is active
+
+Traffic visible in API Gateway dashboard
+
+Logs are being generated correctly
+
+8. UAT Testing & Certification
+
+During UAT phase:
+
+Customer Responsibilities
+
+Generate access token
+
+Submit test enrollments
+
+Validate status retrieval
+
+Test error scenarios
+
+Validate Push delivery (if applicable)
+
+Internal Responsibilities
+
+Monitor API traffic in Gateway dashboard
+
+Review logs for validation errors
+
+Confirm correct lifecycle transitions
+
+Validate batch delivery (if enabled)
+
+Once testing is successful:
+
+Obtain written confirmation
+
+Update onboarding tracker to “UAT Certified”
+
+9. Production Go-Live
+9.1 Production Setup
+
+Create Production client_id and client_secret
+
+Apply Production rate limits
+
+Enable Production routing
+
+Configure Production IP whitelist
+
+Enable Production monitoring & alerts
+
+9.2 Share Production Credentials
+
+Provide credentials via secure channel only.
+
+Never send secrets via plain email.
+
+10. Post Go-Live Monitoring (First 48 Hours)
+
+Monitor closely:
+
+API traffic volume
+
+Error rates
+
+Latency spikes
+
+Enrollment processing failures
+
+Push delivery success rate
+
+Validate:
+
+No abnormal 401/403 errors
+
+No stuck enrollments
+
+No batch retry loops
+
+Escalate anomalies immediately.
+
+11. Enrollment Lifecycle (Reference)
+SUBMITTED → VALIDATING → PROCESSING → APPROVED / REJECTED / FAILED
+
+
+Ensure no enrollments remain in intermediate states beyond SLA thresholds.
+
+12. Support Handover
+
+After stable operation:
+
+Update internal systems with:
+
+Customer name
+
+Integration model
+
+Go-live date
+
+Credential reference ID
+
+Notify Support team with:
+
+SLA tier
+
+Monitoring dashboard location
+
+Alert ownership
+
+Special configurations
+
+Transition monitoring responsibility to Support.
+
+13. Offboarding / Credential Rotation
+
+If required:
+
+Revoke OAuth client
+
+Disable API access
+
+Disable push configuration
+
+Archive logs per retention policy
+
+14. Internal Checklist Summary
+Step	Owner	Status
+Agreement Verified	Business	☐
+Configuration Collected	Onboarding	☐
+OAuth Client Created	Platform	☐
+API Gateway Configured	Platform	☐
+Monitoring & Alerts Enabled	Platform	☐
+UAT Enabled	Onboarding	☐
+UAT Certified	Customer	☐
+Production Enabled	Platform	☐
+Support Handover Completed	Onboarding	☐
