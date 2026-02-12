@@ -20,6 +20,22 @@ All APIs are secured using OAuth 2.0 (Client Credentials Grant).
 
 This document is designed to enable quick and seamless onboarding.
 
+Welcome to the [Your Company Name] Digital Enrollment Platform.
+
+Our Digital Enrollment APIs provide secure, scalable integration for submitting and processing enrollments. They support real-time and scheduled workflows for seamless connection with your applications, portals, or backend systems.
+
+Through this integration, you can:
+
+Submit digital enrollment requests
+
+Retrieve enrollment status on demand (Pull Model)
+
+Receive automated status updates through scheduled batch notifications (Push Model)
+
+All APIs follow REST principles, use JSON payloads over HTTPS, and are secured using OAuth 2.0 (Client Credentials Grant).
+
+This guide provides the information needed for onboarding, authentication, API usage, and status handling to help your teams integrate quickly and efficiently.
+
 2. High-Level Architecture
 
 [Placeholder: Insert Architecture Diagram Here]
