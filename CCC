@@ -1,0 +1,306 @@
+Digital Enrollment API Integration Guide
+
+Version: 1.0
+Company: [Your Company Name]
+Last Updated: [Insert Date]
+
+1. Introduction
+
+Welcome to the [Your Company Name] Digital Enrollment Platform.
+
+This guide explains how to integrate your system to:
+
+Submit digital enrollment requests
+
+Retrieve enrollment status on demand (Pull Model)
+
+Receive automated status updates (Push Model)
+
+All APIs are secured using OAuth 2.0 (Client Credentials Grant).
+
+This document is designed to enable quick and seamless onboarding.
+
+2. High-Level Architecture
+
+[Placeholder: Insert Architecture Diagram Here]
+
+Integration Overview
+
+Your system authenticates using OAuth 2.0.
+
+You submit an enrollment request.
+
+We process the enrollment.
+
+You retrieve the final status via:
+
+API call (Pull), or
+
+Scheduled batch push (Push).
+
+3. Onboarding Process
+
+To begin integration, please complete the following steps.
+
+3.1 Agreement & Access
+
+Execute required commercial and legal agreements.
+
+Confirm preferred status retrieval model (Pull or Push).
+
+3.2 One-Time Configuration
+
+Prior to API enablement, please provide:
+
+Organization name
+
+Technical & operational contact details
+
+IP addresses for whitelisting (if required)
+
+Callback endpoint URL (for Push model)
+
+Public key (if applicable)
+
+This is a one-time setup requirement.
+
+3.3 Credential Provisioning
+
+After configuration approval, we will provide:
+
+client_id
+
+client_secret
+
+OAuth token endpoint
+
+API Base URLs (UAT & Production)
+
+Testing instructions
+
+3.4 UAT Testing
+
+In UAT environment:
+
+Generate OAuth token
+
+Submit test enrollments
+
+Validate status retrieval
+
+Complete sign-off
+
+3.5 Production Go-Live
+
+After successful UAT certification:
+
+Production credentials will be activated.
+
+Production endpoints will be enabled.
+
+4. API Access & Integration Flow
+
+This section describes the complete operational sequence from authentication to status retrieval.
+
+4.1 Environment Details
+Environment	Base URL
+UAT	https://uat-api.yourcompany.com
+
+Production	https://api.yourcompany.com
+
+All endpoints below are relative to the base URL of your assigned environment.
+
+4.2 Authentication – OAuth 2.0
+
+All API calls require a valid Bearer access token.
+
+We use OAuth 2.0 – Client Credentials Grant.
+
+Step 1 – Generate Access Token
+Endpoint
+POST /oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+Request Parameters
+grant_type=client_credentials
+&client_id=YOUR_CLIENT_ID
+&client_secret=YOUR_CLIENT_SECRET
+&scope=enrollment
+
+Sample Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+
+Usage
+
+Include the token in all API calls:
+
+Authorization: Bearer {access_token}
+
+
+Generate a new token when the existing one expires.
+
+4.3 Enrollment Submission
+Step 2 – Submit Enrollment
+Endpoint
+POST /v1/enrollments
+
+Headers
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+Sample Request
+{
+  "requestId": "REQ123456",
+  "customerId": "CUST10001",
+  "productCode": "DIGI001",
+  "applicant": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "dateOfBirth": "1990-05-10",
+    "email": "john.doe@email.com",
+    "phone": "+15551234567"
+  },
+  "address": {
+    "line1": "123 Main Street",
+    "city": "New York",
+    "state": "NY",
+    "postalCode": "10001",
+    "country": "US"
+  }
+}
+
+Sample Response
+{
+  "enrollmentId": "ENR789456",
+  "requestId": "REQ123456",
+  "status": "SUBMITTED",
+  "timestamp": "2026-02-12T10:15:30Z"
+}
+
+
+Store the enrollmentId for tracking.
+
+4.4 Enrollment Processing & Status Lifecycle
+
+Each enrollment progresses through the following states:
+
+SUBMITTED → VALIDATING → PROCESSING → APPROVED / REJECTED / FAILED
+
+Status	Description
+SUBMITTED	Request received
+VALIDATING	Data validation
+PROCESSING	Business evaluation
+APPROVED	Enrollment successful
+REJECTED	Business rule rejection
+FAILED	Technical/system issue
+4.5 Status Retrieval Options
+
+You may retrieve status using one of the following models.
+
+Option A – On-Demand Status (Pull Model)
+Endpoint
+GET /v1/enrollments/{enrollmentId}
+
+Headers
+Authorization: Bearer {access_token}
+
+Sample Response
+{
+  "enrollmentId": "ENR789456",
+  "requestId": "REQ123456",
+  "status": "APPROVED",
+  "statusReason": "All validations passed",
+  "lastUpdated": "2026-02-12T10:20:45Z"
+}
+
+
+Recommended for:
+
+Real-time applications
+
+UI-based systems
+
+Immediate decision display
+
+Option B – Scheduled Status Updates (Push Model)
+
+Instead of polling, you may opt for automated status updates.
+
+Process Flow
+
+Provide callback endpoint during onboarding.
+
+Our scheduled batch process compiles updated enrollments.
+
+Status payload is sent to your endpoint.
+
+Your system must return HTTP 200.
+
+Sample Push Payload
+{
+  "batchId": "BATCH20260212",
+  "generatedAt": "2026-02-12T11:00:00Z",
+  "enrollments": [
+    {
+      "enrollmentId": "ENR789456",
+      "requestId": "REQ123456",
+      "status": "APPROVED",
+      "lastUpdated": "2026-02-12T10:20:45Z"
+    }
+  ]
+}
+
+Expected Response
+HTTP 200 OK
+
+
+Retries apply in case of non-success response, as per SLA.
+
+5. Error Handling
+Standard Error Format
+{
+  "errorCode": "INVALID_REQUEST",
+  "errorMessage": "Missing required field: customerId",
+  "correlationId": "CORR123456",
+  "timestamp": "2026-02-12T10:15:35Z"
+}
+
+Common HTTP Status Codes
+Code	Meaning
+200	Success
+400	Invalid Request
+401	Authentication Failed
+403	Authorization Failed
+404	Resource Not Found
+500	Internal Server Error
+6. Security Requirements
+
+To ensure secure integration:
+
+Use HTTPS (TLS 1.2+)
+
+Protect client credentials
+
+Do not expose secrets in frontend applications
+
+Store tokens securely
+
+Rotate credentials if compromised
+
+7. Support
+
+For technical support:
+
+Email: support@yourcompany.com
+
+SLA: [Insert SLA Details]
+
+Integration Summary
+Capability	Method
+Submit Enrollment	POST API
+Check Status (Pull)	GET API
+Receive Status (Push)	Scheduled Batch
